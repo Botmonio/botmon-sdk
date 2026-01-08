@@ -94,7 +94,7 @@ Supported providers: `cloudflare`, `fastly`, `akamai`, `none`
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 20.9+ (LTS)
 - Cloudflare Workers / Fastly Compute / similar edge runtime
 
 ## License
