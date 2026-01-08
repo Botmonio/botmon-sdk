@@ -1,6 +1,6 @@
 {
   "name": "@botmonio/sdk",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "BotMon SDK for Cloudflare Workers - Track analytics events with batching and retry logic",
   "private": false,
   "type": "module",

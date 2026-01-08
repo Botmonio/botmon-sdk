@@ -1,6 +1,10 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  css: {
+    // Disable CSS processing - SDK has no CSS
+    postcss: {},
+  },
   test: {
     globals: true,
     environment: "node",
