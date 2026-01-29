@@ -1,6 +1,11 @@
 import esbuild from "esbuild";
+import { readFileSync } from "fs";
 
 const watch = process.argv.includes("--watch");
+
+// Read version from package.json
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
+const version = pkg.version;
 
 const buildOptions = {
   entryPoints: ["src/index.ts"],
@@ -13,6 +18,10 @@ const buildOptions = {
   sourcemap: true,
   treeShaking: true,
   conditions: ["worker", "browser"],
+  // Add version banner that survives minification
+  banner: {
+    js: `/* @botmonio/sdk@${version} */`,
+  },
 };
 
 if (watch) {

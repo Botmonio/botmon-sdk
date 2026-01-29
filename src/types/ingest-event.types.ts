@@ -8,7 +8,7 @@
 /**
  * Traffic classification types
  */
-export type TrafficType = "human" | "good_bot" | "bad_bot" | "security_scanner" | "unknown";
+export type TrafficType = "human" | "good_bot" | "bad_bot" | "neutral_bot";
 
 /**
  * Base event fields common to all event types
