@@ -1,0 +1,8 @@
+name = "sample-botmon-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+# Set your API key as a secret instead:
+#   npx wrangler secret put BOTMON_API_KEY
+# BOTMON_API_KEY = "btmn_prod_xxxxx"

@@ -8,27 +8,130 @@ Official BotMon SDK for tracking web traffic analytics. Works with Cloudflare Wo
 npm install @botmonio/sdk
 ```
 
-## Quick Start
+## Integration Patterns
+
+The SDK supports three integration patterns. Pick the one that fits your use-case.
+
+### Pattern 1 — Analytics Only
+
+Drop-in analytics tracking with no code-structure changes. This is the simplest integration.
 
 ```typescript
 import { BotMon } from "@botmonio/sdk";
 
+interface Env {
+  BOTMON_API_KEY: string;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    // Initialize SDK (singleton pattern)
-    const sdk = BotMon.init({
-      apiKey: env.BOTMON_API_KEY,
+    const sdk = BotMon.init({ apiKey: env.BOTMON_API_KEY });
+
+    const startTime = Date.now();
+    const response = await handleRequest(request, env);
+
+    sdk.track(ctx, {
+      request,
+      response,
+      startTime,
     });
-
-    // Handle the request
-    const response = await handleRequest(request);
-
-    // Track the request (non-blocking)
-    sdk.track(ctx, { request, response });
 
     return response;
   },
 };
+```
+
+### Pattern 2 — Full Middleware
+
+The complete BotMon experience: analytics, managed robots.txt & sitemap, .well-known files, and AI bot optimisation (GEO).
+
+```typescript
+import { createCloudflareMiddleware } from "@botmonio/sdk";
+
+export default createCloudflareMiddleware({
+  apiKey: process.env.BOTMON_API_KEY,
+
+  managedRules: {
+    // Managed robots.txt — appends BotMon-managed directives to your
+    // origin robots.txt so you keep existing rules intact.
+    robotsTxt: {
+      enabled: true,
+      mode: "append",   // "append" | "merge" | "replace" | "disabled"
+    },
+
+    // Managed sitemap — merges BotMon-managed URLs into your origin
+    // sitemap so search engines and AI crawlers discover all pages.
+    sitemap: {
+      enabled: true,
+      mode: "merge",    // "append" | "merge" | "replace" | "disabled"
+    },
+
+    // Managed .well-known files — serves ai-plugin.json and llms.txt
+    // for AI platforms that look for them.
+    wellKnown: {
+      enabled: true,
+      files: {
+        "ai-plugin.json": { mode: "replace" },
+        "llms.txt":       { mode: "replace" },
+      },
+    },
+
+    // GEO (Generative Engine Optimisation) — automatically enriches
+    // HTML responses with structured data and summaries when the
+    // request comes from an AI bot (e.g. GPTBot, ClaudeBot).
+    // Human visitors always get the unmodified response.
+    geo: {
+      enabled: true,
+      injectJsonLd: true,
+      injectSummary: true,
+      enrichHeadings: true,
+      rules: [
+        { urlPattern: "/products/*", pageType: "product" },
+        { urlPattern: "/docs/**",    pageType: "docs" },
+        { urlPattern: "/blog/**",    pageType: "article" },
+        { urlPattern: "/pricing",    pageType: "pricing" },
+        { urlPattern: "/faq",        pageType: "faq" },
+        { urlPattern: "/api/**",     disabled: true },
+      ],
+    },
+  },
+
+  onResponse: async (context) => {
+    if (context.isAiBot) {
+      const modified = new Response(context.response.body, context.response);
+      modified.headers.set("X-Optimised-For", context.botName ?? "ai-bot");
+      return modified;
+    }
+    return context.response;
+  },
+
+  configCacheTtl: 300,
+  debug: false,
+
+})(async (request, env, ctx) => {
+  return handleRequest(request, env);
+});
+```
+
+### Pattern 3 — Minimal Middleware
+
+A lightweight starting point: wrap your handler with the middleware and enable robots.txt management. You can turn on more features later from the BotMon dashboard without redeploying.
+
+```typescript
+import { createCloudflareMiddleware } from "@botmonio/sdk";
+
+export default createCloudflareMiddleware({
+  apiKey: process.env.BOTMON_API_KEY,
+
+  managedRules: {
+    robotsTxt: {
+      enabled: true,
+      mode: "append",
+    },
+  },
+})(async (request, env, ctx) => {
+  return handleRequest(request, env);
+});
 ```
 
 ## Configuration
@@ -91,6 +194,18 @@ const sdk = BotMon.init({
 ```
 
 Supported providers: `cloudflare`, `fastly`, `akamai`, `none`
+
+## Sample Worker
+
+A complete working example is available in the [`examples/sample-worker`](./examples/sample-worker) directory. To try it:
+
+```bash
+cd examples/sample-worker
+npm install
+npx wrangler secret put BOTMON_API_KEY   # paste your API key
+npx wrangler dev                         # local dev
+npx wrangler deploy                      # deploy to Cloudflare
+```
 
 ## Requirements
 
