@@ -41,6 +41,41 @@ const DEFAULT_API_BASE_URL = "https://app.botmon.io/api";
 const DEFAULT_CONFIG_CACHE_TTL = 300;
 
 /**
+ * Default session cookie name
+ */
+const DEFAULT_SESSION_COOKIE_NAME = "__botmon_sid";
+
+/**
+ * Default session cookie max age (30 minutes)
+ */
+const DEFAULT_SESSION_MAX_AGE = 1800;
+
+/**
+ * Parse session cookie from request Cookie header
+ */
+function parseSessionCookie(request: Request, cookieName: string): string | undefined {
+  const cookieHeader = request.headers.get("Cookie");
+  if (!cookieHeader) return undefined;
+
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const [name, ...valueParts] = cookie.trim().split("=");
+    if (name === cookieName) {
+      return valueParts.join("=") || undefined;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Build Set-Cookie header value for session tracking
+ */
+function buildSetCookieHeader(cookieName: string, value: string, maxAge: number): string {
+  return `${cookieName}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+}
+
+/**
  * Create a Cloudflare Workers middleware that wraps a fetch handler.
  *
  * Returns a function that accepts the customer's fetch handler and returns
@@ -64,6 +99,16 @@ export function createCloudflareMiddleware(
           if (!apiKey) {
             // No API key — pass through to origin without middleware
             return handler(request, env, ctx);
+          }
+
+          // Session tracking: read cookie
+          const sessionEnabled = config.sessionTracking?.enabled !== false;
+          const sessionCookieName = config.sessionTracking?.cookieName || DEFAULT_SESSION_COOKIE_NAME;
+          const sessionMaxAge = config.sessionTracking?.maxAge ?? DEFAULT_SESSION_MAX_AGE;
+          let sessionId: string | undefined;
+
+          if (sessionEnabled) {
+            sessionId = parseSessionCookie(request, sessionCookieName) || crypto.randomUUID();
           }
 
           const url = new URL(request.url);
@@ -127,12 +172,23 @@ export function createCloudflareMiddleware(
               response: finalResponse,
               startTime,
               metadata: analyticsMetadata,
+              sessionId,
             });
           } catch (error) {
             // Analytics failure should never break the response
             if (config.debug) {
               console.error("[BotMon] Analytics tracking failed:", error);
             }
+          }
+
+          // Session tracking: set/refresh cookie on response
+          if (sessionEnabled && sessionId) {
+            const responseWithCookie = new Response(finalResponse.body, finalResponse);
+            responseWithCookie.headers.append(
+              "Set-Cookie",
+              buildSetCookieHeader(sessionCookieName, sessionId, sessionMaxAge),
+            );
+            return responseWithCookie;
           }
 
           return finalResponse;

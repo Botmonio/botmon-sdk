@@ -68,7 +68,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 // robots.txt & sitemap, .well-known files, and AI bot optimisation.
 //
 // export default createCloudflareMiddleware({
-//   apiKey: process.env.BOTMON_API_KEY,
+//   // apiKey is read from env.BOTMON_API_KEY automatically, or pass explicitly:
+//   // apiKey: env.BOTMON_API_KEY,
 //
 //   managedRules: {
 //     // Managed robots.txt — appends BotMon-managed directives to your
@@ -144,9 +145,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 // middleware and enable robots.txt management. You can turn on more
 // features later from the BotMon dashboard without redeploying.
 
+// apiKey is read from env.BOTMON_API_KEY automatically by the SDK
 export default createCloudflareMiddleware({
-  apiKey: process.env.BOTMON_API_KEY,
-
   managedRules: {
     robotsTxt: {
       enabled: true,

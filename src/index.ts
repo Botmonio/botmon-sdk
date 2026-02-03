@@ -57,4 +57,4 @@ export type {
 } from "./types/geo.types";
 
 // SDK version - matches package.json
-export const SDK_VERSION = "0.7.1";
+export const SDK_VERSION = "0.8.0";

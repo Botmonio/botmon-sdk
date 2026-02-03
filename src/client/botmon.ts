@@ -258,7 +258,7 @@ export class BotMon {
    * captures the response body (up to robotsTxtMaxSize bytes).
    */
   private async buildEvent(options: TrackOptions): Promise<RawRequestEvent> {
-    const { request, response, startTime, metadata, robotsTxtBody } = options;
+    const { request, response, startTime, metadata, robotsTxtBody, sessionId } = options;
 
     // Parse URL
     const url = new URL(request.url);
@@ -347,6 +347,9 @@ export class BotMon {
       clientCountry: cf?.country || undefined,
       userAgent: request.headers.get("User-Agent") || undefined,
       referer: request.headers.get("Referer") || undefined,
+
+      // Session tracking
+      sessionId,
 
       // Custom metadata
       metadata,

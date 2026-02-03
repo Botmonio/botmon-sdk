@@ -39,6 +39,9 @@ export interface BaseEvent {
   bytesSent?: number;
   bytesReceived?: number;
 
+  // Session tracking
+  sessionId?: string;            // Cookie-based session identifier (UUID)
+
   // Extensibility
   metadata?: Record<string, any>;
 

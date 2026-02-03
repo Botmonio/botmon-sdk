@@ -3,6 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
 [vars]
-# Set your API key as a secret instead:
+# For production, use wrangler secrets instead:
 #   npx wrangler secret put BOTMON_API_KEY
-# BOTMON_API_KEY = "btmn_prod_xxxxx"
+# For local dev, the SDK reads from env.BOTMON_API_KEY automatically.
+BOTMON_API_KEY = "btmn_test_local_key"

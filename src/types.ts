@@ -60,6 +60,20 @@ export interface BotMonConfig {
   botDetectionProvider?: BotDetectionProvider;
 
   /**
+   * Session tracking configuration (optional)
+   * Enables first-party cookie-based session tracking in the middleware.
+   * When enabled, a cookie is set on each response to identify sessions
+   * across requests, even if the client IP changes.
+   *
+   * @default { enabled: true, cookieName: "__botmon_sid", maxAge: 1800 }
+   */
+  sessionTracking?: {
+    enabled?: boolean;        // default: true
+    cookieName?: string;      // default: "__botmon_sid"
+    maxAge?: number;          // default: 1800 (30 min)
+  };
+
+  /**
    * Enable robots.txt body capture (optional)
    * When enabled, automatically captures the response body for /robots.txt requests.
    * Disabled by default for security - enable only if you need to analyze robots.txt content.
@@ -95,6 +109,9 @@ export interface TrackOptions {
 
   /** robots.txt response body (optional, only for /robots.txt requests) */
   robotsTxtBody?: string;
+
+  /** Session identifier from cookie-based tracking (set by middleware) */
+  sessionId?: string;
 }
 
 /**
